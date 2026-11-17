@@ -21,6 +21,10 @@ sudo crontab -e
 ```text
 */5 * * * * /usr/bin/flock -n /run/mailcow-postfix-sync.lock /opt/mailcow-postfix-sync/sync.sh >> /var/log/mailcow-postfix-sync.log 2>&1
 ```
+4. Add map to Postfix config `/etc/postfix/main.cf`
+```text
+relay_recipient_maps = hash:/etc/postfix/relay_recipients
+```
 
 
 ## Develop
