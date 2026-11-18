@@ -25,7 +25,11 @@ sudo crontab -e
 ```text
 relay_recipient_maps = hash:/etc/postfix/relay_recipients
 ```
-
+5. Reload Postfix
+```bash
+sudo postfix check
+sudo systemctl reload postfix
+```
 
 ## Develop
 ```bash
