@@ -88,3 +88,6 @@ applicable). After changing `MAILCOW_IP` in `.env`, recreate HAProxy with
 `docker compose up -d --force-recreate haproxy`. After editing its config,
 validate it with `docker compose exec haproxy haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg`
 and then restart it with `docker compose restart haproxy`.
+HAProxy runs as root with only the NET_BIND_SERVICE capability so it can bind
+ports below 1024 when using host networking. If your Docker installation uses
+additional security policies or rootless mode, check that they allow this.
