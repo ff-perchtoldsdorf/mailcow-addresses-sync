@@ -38,3 +38,39 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 python main.py
 ```
+## Docker
+
+The release workflow publishes the sync image to GitHub Container Registry as
+`ghcr.io/<owner>/<repository>:<release-tag>`; stable releases also update
+`latest`. The package must be public for anonymous pulls, otherwise authenticate
+with `docker login ghcr.io` using an account with package access.
+
+1. In `docker`, copy `.env.example` to `.env` and enter your Mailcow URL and API key.
+   `SYNC_INTERVAL` is in seconds. Keep `POSTFIX_RECIPIENT_FILE` at the example
+   path unless you also change the matching Postfix configuration and volume.
+2. Edit `docker/postfix/main.cf`: set `myhostname`, `relay_domains`, and the
+   Mailcow destination in `relay_transport`. Add only the source IP of Mailcow to `mynetworks` (for example `192.0.2.10/32`). This example accepts mail for the
+   configured relay domains and checks recipients against the synchronized map.
+3. Run `docker compose up -d --build` from the `docker` directory. The sync
+   container pulls the published image; Postfix is built locally. Adjust the
+   image name in `docker-compose.yml` if the repository is renamed or forked.
+4. Check `docker compose logs -f`. Postfix uses Linux host networking and listens
+   on host port 25. Ensure the port is free and accessible. The Postfix configuration and generated maps are
+   stored in `docker/postfix` on the host. After changing `main.cf`, run
+   `docker compose restart postfix`.
+
+Until the first successful sync, the recipient map is empty and mail for relay
+recipients is rejected. The last successful map is kept if a later sync fails.
+The example is a starting configuration: configure DNS, TLS and any additional
+mail policies for your environment before exposing it to the internet.
+
+For outgoing mail, configure Mailcow to use this relay host on port 25. The IP
+in `mynetworks` must be the actual source IP seen by Postfix, including any NAT.
+Do not trust a Docker bridge or proxy address shared by other clients: that
+would permit them to relay mail too. Confirm with an SMTP test that Mailcow is
+accepted and an untrusted external client cannot relay to an unrelated domain.
+Messages to other domains are delivered directly using DNS MX records; outgoing
+TCP port 25, correct DNS, PTR, SPF and DKIM are needed for reliable delivery.
+The Postfix queue is stored in the `postfix-queue` Docker volume. Host networking
+is intended for Linux Docker Engine; Docker Desktop networking differs and this
+example must not be used there without verifying source IP preservation.

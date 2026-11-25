@@ -1,0 +1,19 @@
+services:
+  sync:
+    image: ghcr.io/ff-perchtoldsdorf/mailcow-addresses-sync:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./postfix/data:/var/lib/postfix-sync
+
+  postfix:
+    build: ./postfix
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./postfix/main.cf:/etc/postfix/main.cf:ro
+      - ./postfix/data:/var/lib/postfix-sync
+      - postfix-queue:/var/spool/postfix
+
+volumes:
+  postfix-queue:

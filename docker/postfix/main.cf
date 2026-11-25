@@ -1,0 +1,18 @@
+# Replace the example domain, hostname and Mailcow destination.
+myhostname = relay.example.at
+mydestination = localhost
+inet_interfaces = all
+inet_protocols = all
+
+# Add ONLY the source IP Mailcow uses to connect, for example:
+# mynetworks = 127.0.0.0/8 [::1]/128 192.0.2.10/32
+mynetworks = 127.0.0.0/8 [::1]/128
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+
+relay_domains = example.at
+relay_recipient_maps = hash:/var/lib/postfix-sync/relay_recipients
+relay_transport = relay:[mail.example.at]:25
+
+# Trusted clients can send to other domains directly via DNS MX.
+relayhost =
+smtp_tls_security_level = may

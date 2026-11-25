@@ -281,4 +281,5 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/python,git,visualstudiocode,windows,macos,linux
+# End of https://www.toptal.com/developers/gitignore/api/python,git,visualstudiocode,windows,macos,linux# Runtime-generated Postfix maps
+docker/postfix/data/
