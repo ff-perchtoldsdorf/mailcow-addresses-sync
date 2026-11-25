@@ -45,14 +45,14 @@ The release workflow publishes the sync image to GitHub Container Registry as
 `latest`. The package must be public for anonymous pulls, otherwise authenticate
 with `docker login ghcr.io` using an account with package access.
 
-1. In `docker`, copy `.env.example` to `.env` and enter your Mailcow URL and API key.
+1. In `docker`, copy `.env.example` to `.env` and enter your Mailcow URL, API key and reachable IPv4 address in `MAILCOW_IP`.
    `SYNC_INTERVAL` is in seconds. Keep `POSTFIX_RECIPIENT_FILE` at the example
    path unless you also change the matching Postfix configuration and volume.
 2. Edit `docker/postfix/main.cf`: set `myhostname`, `relay_domains`, and the
    Mailcow destination in `relay_transport`. Add only the source IP of Mailcow to `mynetworks` (for example `192.0.2.10/32`). This example accepts mail for the
    configured relay domains and checks recipients against the synchronized map.
 3. Run `docker compose up -d --build` from the `docker` directory. The sync
-   container pulls the published image; Postfix is built locally. Adjust the
+   container pulls the published image; Postfix is built locally and HAProxy uses the official image. Adjust the
    image name in `docker-compose.yml` if the repository is renamed or forked.
 4. Check `docker compose logs -f`. Postfix uses Linux host networking and listens
    on host port 25. Ensure the port is free and accessible. The Postfix configuration and generated maps are
@@ -74,3 +74,17 @@ TCP port 25, correct DNS, PTR, SPF and DKIM are needed for reliable delivery.
 The Postfix queue is stored in the `postfix-queue` Docker volume. Host networking
 is intended for Linux Docker Engine; Docker Desktop networking differs and this
 example must not be used there without verifying source IP preservation.
+HAProxy uses `docker/haproxy/haproxy.cfg` and forwards TCP ports 465, 587,
+993, 995, 4190, 443 and 80 to `MAILCOW_IP` on the same ports. Port 25 remains
+with Postfix. The HTTP and HTTPS backends send PROXY protocol v2, as in the
+original configuration: the Mailcow web server must be configured to accept it
+and trust this proxy. The mail protocol backends do not send the PROXY protocol,
+so Mailcow sees the proxy as the client for those connections. TLS is passed
+through to Mailcow. HAProxy logs to `docker compose logs haproxy`.
+
+Both HAProxy and Postfix use host networking on Linux; make sure their ports
+are available and the host can reach the Mailcow IP (including over a VPN, if
+applicable). After changing `MAILCOW_IP` in `.env`, recreate HAProxy with
+`docker compose up -d --force-recreate haproxy`. After editing its config,
+validate it with `docker compose exec haproxy haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg`
+and then restart it with `docker compose restart haproxy`.

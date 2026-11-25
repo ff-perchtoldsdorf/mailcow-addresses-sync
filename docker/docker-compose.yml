@@ -6,6 +6,15 @@ services:
     volumes:
       - ./postfix/data:/var/lib/postfix-sync
 
+  haproxy:
+    image: haproxy:3.0
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      MAILCOW_IP: ${MAILCOW_IP:?Set MAILCOW_IP in docker/.env}
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+
   postfix:
     build: ./postfix
     restart: unless-stopped
